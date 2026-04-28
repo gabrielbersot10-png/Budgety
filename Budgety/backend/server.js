@@ -196,6 +196,15 @@ app.get('/cadastro.html', (req, res) => {
 
 // 9. PORTA E INICIALIZAÇÃO
 const PORT = process.env.PORT || 3000;
+// Faz com que a raiz do site redirecione para o login
+app.get('/', (req, res) => {
+    res.redirect('/login.html');
+});
+
+// Rota para a página de dashboard (se o seu HTML se chamar relatorio.html)
+app.get('/relatorio.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'frontend', 'relatorio.html'));
+});
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
 });
