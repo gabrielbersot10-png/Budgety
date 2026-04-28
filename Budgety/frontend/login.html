@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Budgety — Login</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f1f3d;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      background: #1a3a6b;
+      border: 1px solid #2a5298;
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .logo {
+      text-align: center;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 32px;
+    }
+
+    .logo span { font-size: 32px; }
+
+    h2 {
+      text-align: center;
+      color: #7eb8f7;
+      font-size: 18px;
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: #7eb8f7;
+      margin-bottom: 6px;
+      margin-top: 16px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #2a5298;
+      border-radius: 8px;
+      background: #0f1f3d;
+      color: #fff;
+      font-size: 15px;
+    }
+
+    input::placeholder { color: #5a7fa8; }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      background: #2a5298;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      margin-top: 24px;
+      transition: background 0.2s;
+    }
+
+    .btn:hover { background: #3a6bc8; }
+
+    .erro {
+      background: rgba(231,76,60,0.15);
+      border: 1px solid #e74c3c;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #e74c3c;
+      margin-top: 16px;
+      display: none;
+    }
+
+    .captcha {
+      margin-top: 16px;
+      display: none;
+    }
+
+    .captcha-box {
+      background: #0f1f3d;
+      border: 1px solid #2a5298;
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .captcha-box input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    .rodape {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 13px;
+      color: #5a7fa8;
+    }
+
+    .rodape a {
+      color: #7eb8f7;
+      text-decoration: none;
+    }
+
+    .rodape a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="logo"><span>💰</span> Budgety</div>
+    <h2>Entrar na sua conta</h2>
+
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="seu@email.com" tabindex="1">
+
+    <label for="senha">Senha</label>
+    <input type="password" id="senha" placeholder="Sua senha" maxlength="64" tabindex="2">
+
+    <div class="captcha" id="captcha">
+      <div class="captcha-box">
+        <input type="checkbox" id="captcha-check" tabindex="3">
+        <label for="captcha-check" style="margin:0;color:#7eb8f7;cursor:pointer">Não sou um robô</label>
+      </div>
+    </div>
+
+    <div class="erro" id="erro"></div>
+
+    <button class="btn" onclick="login()" tabindex="4">Entrar</button>
+
+    <div class="rodape">
+      Não tem conta? <a href="/cadastro.html">Cadastre-se</a>
+    </div>
+  </div>
+
+  <script>
+    let tentativas = 0
+
+    async function login() {
+      const email = document.getElementById('email').value
+      const senha = document.getElementById('senha').value
+      const erroEl = document.getElementById('erro')
+      const captcha = document.getElementById('captcha')
+      const captchaCheck = document.getElementById('captcha-check')
+
+      erroEl.style.display = 'none'
+
+      if (!email || !senha) {
+        mostrarErro('Preencha todos os campos!')
+        return
+      }
+
+      if (tentativas >= 1 && !captchaCheck.checked) {
+        captcha.style.display = 'block'
+        mostrarErro('Por favor confirme que você não é um robô.')
+        return
+      }
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, senha })
+        })
+
+        const data = await res.json()
+
+        if (!res.ok) {
+          tentativas++
+          if (tentativas >= 1) captcha.style.display = 'block'
+          mostrarErro(data.erro)
+          captchaCheck.checked = false
+          return
+        }
+
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('email', data.email)
+        window.location.href = '/'
+
+      } catch {
+        mostrarErro('Erro ao conectar com o servidor.')
+      }
+    }
+
+    function mostrarErro(msg) {
+      const erroEl = document.getElementById('erro')
+      erroEl.textContent = msg
+      erroEl.style.display = 'block'
+    }
+
+    // Permite login com Enter
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') login()
+    })
+  </script>
+</body>
+</html>

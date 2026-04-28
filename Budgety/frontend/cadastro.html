@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Budgety — Cadastro</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f1f3d;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      background: #1a3a6b;
+      border: 1px solid #2a5298;
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .logo {
+      text-align: center;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 32px;
+    }
+
+    .logo span { font-size: 32px; }
+
+    h2 {
+      text-align: center;
+      color: #7eb8f7;
+      font-size: 18px;
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: #7eb8f7;
+      margin-bottom: 6px;
+      margin-top: 16px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #2a5298;
+      border-radius: 8px;
+      background: #0f1f3d;
+      color: #fff;
+      font-size: 15px;
+    }
+
+    input::placeholder { color: #5a7fa8; }
+
+    .forca-senha {
+      margin-top: 8px;
+      height: 4px;
+      border-radius: 4px;
+      background: #0f1f3d;
+      overflow: hidden;
+    }
+
+    .forca-barra {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s, background 0.3s;
+      width: 0%;
+    }
+
+    .forca-texto {
+      font-size: 11px;
+      color: #5a7fa8;
+      margin-top: 4px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      background: #2a5298;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      margin-top: 24px;
+      transition: background 0.2s;
+    }
+
+    .btn:hover { background: #3a6bc8; }
+
+    .erro {
+      background: rgba(231,76,60,0.15);
+      border: 1px solid #e74c3c;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #e74c3c;
+      margin-top: 16px;
+      display: none;
+    }
+
+    .sucesso {
+      background: rgba(46,204,113,0.15);
+      border: 1px solid #2ecc71;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #2ecc71;
+      margin-top: 16px;
+      display: none;
+    }
+
+    .rodape {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 13px;
+      color: #5a7fa8;
+    }
+
+    .rodape a {
+      color: #7eb8f7;
+      text-decoration: none;
+    }
+
+    .rodape a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="logo"><span>💰</span> Budgety</div>
+    <h2>Criar sua conta</h2>
+
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="seu@email.com" tabindex="1">
+
+    <label for="senha">Senha</label>
+    <input type="password" id="senha" placeholder="Mínimo 8 caracteres" maxlength="64" tabindex="2" oninput="verificarForca()">
+    <div class="forca-senha">
+      <div class="forca-barra" id="forca-barra"></div>
+    </div>
+    <div class="forca-texto" id="forca-texto"></div>
+
+    <label for="confirmar">Confirmar senha</label>
+    <input type="password" id="confirmar" placeholder="Repita a senha" maxlength="64" tabindex="3">
+
+    <div class="erro" id="erro"></div>
+    <div class="sucesso" id="sucesso"></div>
+
+    <button class="btn" onclick="cadastrar()" tabindex="4">Criar conta</button>
+
+    <div class="rodape">
+      Já tem conta? <a href="/login.html">Entrar</a>
+    </div>
+  </div>
+
+  <script>
+    function verificarForca() {
+      const senha = document.getElementById('senha').value
+      const barra = document.getElementById('forca-barra')
+      const texto = document.getElementById('forca-texto')
+
+      let forca = 0
+      if (senha.length >= 8) forca++
+      if (senha.length >= 12) forca++
+      if (/[A-Z]/.test(senha)) forca++
+      if (/[0-9]/.test(senha)) forca++
+      if (/[^A-Za-z0-9]/.test(senha)) forca++
+
+      const niveis = [
+        { cor: '#e74c3c', texto: 'Muito fraca', largura: '20%' },
+        { cor: '#e67e22', texto: 'Fraca', largura: '40%' },
+        { cor: '#f1c40f', texto: 'Média', largura: '60%' },
+        { cor: '#2ecc71', texto: 'Forte', largura: '80%' },
+        { cor: '#27ae60', texto: 'Muito forte', largura: '100%' }
+      ]
+
+      if (senha.length === 0) {
+        barra.style.width = '0%'
+        texto.textContent = ''
+        return
+      }
+
+      const nivel = niveis[Math.min(forca - 1, 4)]
+      barra.style.width = nivel.largura
+      barra.style.background = nivel.cor
+      texto.textContent = nivel.texto
+      texto.style.color = nivel.cor
+    }
+
+    async function cadastrar() {
+      const email = document.getElementById('email').value
+      const senha = document.getElementById('senha').value
+      const confirmar = document.getElementById('confirmar').value
+
+      const erroEl = document.getElementById('erro')
+      const sucessoEl = document.getElementById('sucesso')
+
+      erroEl.style.display = 'none'
+      sucessoEl.style.display = 'none'
+
+      if (!email || !senha || !confirmar) {
+        mostrarErro('Preencha todos os campos!')
+        return
+      }
+
+      if (senha !== confirmar) {
+        mostrarErro('As senhas não coincidem!')
+        return
+      }
+
+      if (senha.length < 8) {
+        mostrarErro('A senha deve ter no mínimo 8 caracteres!')
+        return
+      }
+
+      try {
+        const res = await fetch('/api/cadastro', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, senha })
+        })
+
+        const data = await res.json()
+
+        if (!res.ok) {
+          mostrarErro(data.erro)
+          return
+        }
+
+        sucessoEl.textContent = 'Conta criada com sucesso! Redirecionando...'
+        sucessoEl.style.display = 'block'
+
+        setTimeout(() => {
+          window.location.href = '/login.html'
+        }, 2000)
+
+      } catch {
+        mostrarErro('Erro ao conectar com o servidor.')
+      }
+    }
+
+    function mostrarErro(msg) {
+      const erroEl = document.getElementById('erro')
+      erroEl.textContent = msg
+      erroEl.style.display = 'block'
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') cadastrar()
+    })
+  </script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Budgety — Relatório Mensal</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f1f3d;
+      color: #fff;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .topo {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 960px;
+      margin: 0 auto 32px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .btn-voltar {
+      background: #1a3a6b;
+      color: #7eb8f7;
+      border: 1px solid #2a5298;
+      border-radius: 10px;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      width: auto;
+      transition: background 0.2s;
+    }
+
+    .btn-voltar:hover { background: #2a5298; }
+
+    .filtro {
+      max-width: 960px;
+      margin: 0 auto 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .filtro label {
+      font-size: 15px;
+      color: #7eb8f7;
+      font-weight: 600;
+    }
+
+    .filtro select {
+      padding: 10px 16px;
+      border: 1px solid #2a5298;
+      border-radius: 8px;
+      background: #1a3a6b;
+      color: #fff;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .cards {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      max-width: 960px;
+      margin: 0 auto 32px;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 24px 20px;
+      flex: 1;
+      text-align: center;
+    }
+
+    .card h2 {
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .card p {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .verde { color: #2ecc71; }
+    .vermelho { color: #e74c3c; }
+
+    .grafico-container {
+      background: #1a3a6b;
+      border: 1px solid #2a5298;
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 500px;
+      margin: 0 auto 32px;
+    }
+
+    .grafico-container h3 {
+      text-align: center;
+      color: #7eb8f7;
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+    .lista-relatorio {
+  max-width: 700px;
+  margin: 32px auto 0;
+ }
+
+    .vazio {
+      text-align: center;
+      color: #5a7fa8;
+      font-size: 16px;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topo">
+    <div class="logo">💰 Budgety</div>
+    <button class="btn-voltar" onclick="window.location.href='/'">← Voltar</button>
+  </div>
+
+  <div class="filtro">
+    <label>Selecione o mês:</label>
+    <select id="filtro-mes" onchange="filtrar()"></select>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <h2>Receitas</h2>
+      <p class="verde" id="rel-receitas">R$ 0.00</p>
+    </div>
+    <div class="card">
+      <h2>Despesas</h2>
+      <p class="vermelho" id="rel-despesas">R$ 0.00</p>
+    </div>
+    <div class="card">
+      <h2>Resultado</h2>
+      <p id="rel-resultado">R$ 0.00</p>
+    </div>
+  </div>
+
+  <div class="grafico-container">
+    <h3>Maiores gastos do mês</h3>
+    <canvas id="grafico-pizza"></canvas>
+    <p class="vazio" id="msg-vazio" style="display:none">Nenhuma despesa neste mês.</p>
+  </div>
+  <div class="lista-relatorio" id="lista-relatorio">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h3 style="color:#7eb8f7">Lançamentos do mês</h3>
+    <button onclick="toggleLista()" id="btn-toggle" style="background:#1a3a6b;color:#7eb8f7;border:1px solid #2a5298;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;width:auto">▼ Ver lançamentos</button>
+  </div>
+  <div id="lista-wrapper" style="display:none">
+    <input type="text" id="busca" placeholder="🔍 Pesquisar lançamento..." oninput="filtrar()" style="width:100%;padding:12px 16px;border:1px solid #2a5298;border-radius:8px;background:#1a3a6b;color:#fff;font-size:14px;margin-bottom:16px;">
+    <div id="lancamentos-mes"></div>
+  </div>
+</div>
+
+  <script src="relatorio.js"></script>
+</body>
+</html>

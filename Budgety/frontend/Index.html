@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Budgety</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f1f3d;
+      color: #fff;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .topo {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 960px;
+      margin: 0 auto 32px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .logo span { font-size: 28px; }
+
+    .btn-gaveta {
+      background: #1a3a6b;
+      color: #7eb8f7;
+      border: 1px solid #2a5298;
+      border-radius: 10px;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      width: auto;
+      transition: background 0.2s;
+    }
+
+    .btn-gaveta:hover { background: #2a5298; }
+
+    .cards {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      max-width: 960px;
+      margin: 0 auto 32px;
+    }
+
+    .card {
+      background: #ffffff;
+      border: none;
+      border-radius: 16px;
+      padding: 24px 20px;
+      flex: 1;
+      text-align: center;
+    }
+
+    .card h2 {
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .card p {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .verde { color: #2ecc71; }
+    .vermelho { color: #e74c3c; }
+
+    .formulario {
+      background: #1a3a6b;
+      border: 1px solid #2a5298;
+      padding: 32px;
+      border-radius: 16px;
+      max-width: 600px;
+      margin: 0 auto 32px;
+    }
+
+    .formulario h3 {
+      font-size: 20px;
+      color: #7eb8f7;
+      margin-bottom: 20px;
+    }
+
+    .formulario input, .formulario select {
+      width: 100%;
+      padding: 14px 16px;
+      margin: 8px 0;
+      border: 1px solid #2a5298;
+      border-radius: 8px;
+      background: #0f1f3d;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    .formulario input::placeholder { color: #5a7fa8; }
+    .formulario select option { background: #0f1f3d; }
+
+    .btn-adicionar {
+      width: 100%;
+      padding: 12px;
+      background: #2a5298;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      margin-top: 10px;
+      transition: background 0.2s;
+    }
+
+    .btn-adicionar:hover { background: #3a6bc8; }
+
+    .btn-relatorio {
+      background: #2a5298;
+      color: #fff;
+      border: 1px solid #3a6bc8;
+      border-radius: 10px;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      width: auto;
+      transition: background 0.2s;
+    }
+
+    .btn-relatorio:hover { background: #3a6bc8; }
+
+    /* Gaveta */
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      z-index: 100;
+    }
+
+    .gaveta {
+      position: fixed;
+      top: 0; left: -440px;
+      width: 420px;
+      height: 100%;
+      background: #1a3a6b;
+      border-right: 1px solid #2a5298;
+      z-index: 101;
+      transition: left 0.3s ease;
+      padding: 28px;
+      overflow-y: auto;
+    }
+
+    .gaveta.aberta { left: 0; }
+    .overlay.visivel { display: block; }
+
+    .gaveta-topo {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .gaveta-topo h2 {
+      font-size: 18px;
+      color: #7eb8f7;
+    }
+
+    .btn-fechar {
+      background: none;
+      border: none;
+      font-size: 22px;
+      cursor: pointer;
+      color: #7eb8f7;
+      width: auto;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topo">
+    <button class="btn-gaveta" onclick="abrirGaveta()">☰ Meus Lançamentos</button>
+    <div class="logo">
+      <span>💰</span> Budgety
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="btn-relatorio" onclick="window.location.href='/relatorio'">📊 Relatório Mensal</button>
+      <div style="position:relative">
+        <div id="avatar" onclick="toggleMenu()" style="width:38px;height:38px;border-radius:50%;background:#2a5298;border:2px solid #7eb8f7;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700;font-size:15px;color:#fff"></div>
+        <div id="menu-usuario" style="display:none;position:absolute;right:0;top:48px;background:#1a3a6b;border:1px solid #2a5298;border-radius:12px;padding:8px;min-width:200px;z-index:200">
+          <div style="padding:10px 14px;border-bottom:1px solid #2a5298;margin-bottom:8px">
+            <div style="font-size:13px;color:#7eb8f7">Logado como</div>
+            <div style="font-size:14px;font-weight:600;color:#fff" id="menu-email"></div>
+          </div>
+          <button onclick="sair()" style="width:100%;background:none;border:none;color:#e74c3c;padding:10px 14px;text-align:left;cursor:pointer;border-radius:8px;font-size:14px">🚪 Sair</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <h2>Receitas</h2>
+      <p class="verde" id="total-receitas">R$ 0</p>
+    </div>
+    <div class="card">
+      <h2>Despesas</h2>
+      <p class="vermelho" id="total-despesas">R$ 0</p>
+    </div>
+    <div class="card">
+      <h2>Resultado</h2>
+      <p id="total-lucro">R$ 0</p>
+    </div>
+  </div>
+
+  <div class="formulario">
+    <h3>Adicionar lançamento</h3>
+    <input type="text" id="descricao" placeholder="Descrição (ex: Aluguel)">
+    <input type="number" id="valor" placeholder="Valor (ex: 500)">
+    <select id="tipo">
+      <option value="receita">Receita</option>
+      <option value="despesa">Despesa</option>
+    </select>
+    <input type="date" id="data">
+    <button class="btn-adicionar" onclick="adicionar()">Adicionar</button>
+  </div>
+
+  <!-- Gaveta lateral -->
+  <div class="overlay" id="overlay" onclick="fecharGaveta()"></div>
+  <div class="gaveta" id="gaveta">
+    <div class="gaveta-topo">
+      <h2>Meus Lançamentos</h2>
+      <button class="btn-fechar" onclick="fecharGaveta()">✕</button>
+    </div>
+    <div id="lista-lancamentos"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
