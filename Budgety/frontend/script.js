@@ -10,7 +10,6 @@ if (menuEmail) menuEmail.textContent = emailUsuario
 
 let lancamentos = []
 
-// Função de API robusta
 async function api(method, rota, body) {
   try {
     const res = await fetch(rota, {
@@ -32,14 +31,13 @@ async function api(method, rota, body) {
     if (!res.ok) throw new Error(data.erro || 'Erro na requisição')
     return data
   } catch (err) {
-    console.error("Erro na API:", err)
+    console.error('Erro na API:', err)
     return method === 'GET' ? [] : { erro: err.message }
   }
 }
 
 async function carregarLancamentos() {
   const dados = await api('GET', '/api/lancamentos')
-  // Garante que lancamentos seja sempre um array
   lancamentos = Array.isArray(dados) ? dados : []
   atualizarDashboard()
 }
@@ -50,7 +48,6 @@ async function adicionar() {
   const tipoEl = document.getElementById('tipo')
   const dataEl = document.getElementById('data')
 
-  // Tratamento de vírgula para ponto antes do parseFloat
   const valorLimpo = valorEl.value.replace(',', '.')
   const valor = parseFloat(valorLimpo)
 
@@ -59,16 +56,13 @@ async function adicionar() {
     return
   }
 
-  const novoLancamento = { 
-    descricao: descEl.value, 
-    valor: valor, 
-    tipo: tipoEl.value, 
-    data: dataEl.value 
-  }
+  await api('POST', '/api/lancamentos', {
+    descricao: descEl.value,
+    valor,
+    tipo: tipoEl.value,
+    data: dataEl.value
+  })
 
-  await api('POST', '/api/lancamentos', novoLancamento)
-  
-  // Limpar campos
   descEl.value = ''
   valorEl.value = ''
   dataEl.value = ''
@@ -83,48 +77,69 @@ async function deletar(id) {
   }
 }
 
+async function editar(id) {
+  const lancamento = lancamentos.find(l => l.id === id)
+  if (!lancamento) return
+
+  const novaDescricao = prompt('Descrição:', lancamento.descricao)
+  if (novaDescricao === null) return
+
+  const novoValor = parseFloat(prompt('Valor:', lancamento.valor))
+  if (isNaN(novoValor)) return
+
+  const novoTipo = prompt('Tipo (receita ou despesa):', lancamento.tipo)
+  if (novoTipo === null) return
+
+  await api('PUT', `/api/lancamentos/${id}`, {
+    descricao: novaDescricao,
+    valor: novoValor,
+    tipo: novoTipo
+  })
+
+  await carregarLancamentos()
+}
+
 function atualizarDashboard() {
   const lista = document.getElementById('lista-lancamentos')
   if (!lista) return
 
-  // 1. Cálculos de Totais (Convertendo String para Number explicitamente)
-  const totalReceitas = lancamentos
+  const agora = new Date()
+  const mesAtual = agora.getMonth()
+  const anoAtual = agora.getFullYear()
+
+  // Filtra lançamentos do mês atual
+  const lancamentosMesAtual = lancamentos.filter(l => {
+    const d = new Date(l.data + 'T00:00:00')
+    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual
+  })
+
+  // Cards mostram só o mês atual
+  const totalReceitas = lancamentosMesAtual
     .filter(l => l.tipo === 'receita')
     .reduce((acc, l) => acc + Number(l.valor), 0)
 
-  const totalDespesas = lancamentos
+  const totalDespesas = lancamentosMesAtual
     .filter(l => l.tipo === 'despesa')
     .reduce((acc, l) => acc + Number(l.valor), 0)
 
   const lucro = totalReceitas - totalDespesas
 
-  // 2. Atualizar Cards na tela
   document.getElementById('total-receitas').textContent = `R$ ${totalReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
   document.getElementById('total-despesas').textContent = `R$ ${totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-  
+
   const totalLucro = document.getElementById('total-lucro')
   totalLucro.textContent = `R$ ${lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
   totalLucro.className = lucro >= 0 ? 'verde' : 'vermelho'
 
-  // 3. Filtrar por Mês Atual para a Lista
-  const agora = new Date()
-  const mesAtual = agora.getMonth()
-  const anoAtual = agora.getFullYear()
-
-  const lancamentosExibidos = lancamentos.filter(l => {
-    const d = new Date(l.data + 'T00:00:00') // Adicionado T00:00:00 para evitar erro de fuso
-    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual
-  })
-
-  // 4. Renderizar Lista
+  // Lista da gaveta — só mês atual
   lista.innerHTML = ''
 
-  if (lancamentosExibidos.length === 0) {
+  if (lancamentosMesAtual.length === 0) {
     lista.innerHTML = '<p style="text-align:center;color:#5a7fa8;margin-top:20px">Nenhum lançamento este mês.</p>'
     return
   }
 
-  lancamentosExibidos.forEach(l => {
+  lancamentosMesAtual.forEach(l => {
     const dataObj = new Date(l.data + 'T00:00:00')
     const dataFormatada = dataObj.toLocaleDateString('pt-BR')
     const valorFormatado = Number(l.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
@@ -140,14 +155,16 @@ function atualizarDashboard() {
             <span style="font-size:12px;color:${l.tipo === 'receita' ? '#2ecc71' : '#e74c3c'};background:${l.tipo === 'receita' ? 'rgba(46,204,113,0.1)' : 'rgba(231,76,60,0.1)'};padding:3px 10px;border-radius:20px">${l.tipo === 'receita' ? '↑ Receita' : '↓ Despesa'}</span>
             <span style="font-size:12px;color:#5a7fa8">${dataFormatada}</span>
           </div>
-          <button onclick="deletar('${l.id}')" style="background:#e74c3c;color:white;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px">Deletar</button>
+          <div style="display:flex;gap:8px">
+            <button onclick="editar('${l.id}')" style="background:#2a5298;color:white;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px">Editar</button>
+            <button onclick="deletar('${l.id}')" style="background:#e74c3c;color:white;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px">Deletar</button>
+          </div>
         </div>
       </div>
     `
   })
 }
 
-// Funções de UI
 function abrirGaveta() {
   document.getElementById('gaveta').classList.add('aberta')
   document.getElementById('overlay').classList.add('visivel')
@@ -168,5 +185,13 @@ function sair() {
   window.location.href = '/login.html'
 }
 
-// Inicialização
+// Fecha menu ao clicar fora
+document.addEventListener('click', e => {
+  const menu = document.getElementById('menu-usuario')
+  const avatar = document.getElementById('avatar')
+  if (menu && avatar && !menu.contains(e.target) && !avatar.contains(e.target)) {
+    menu.style.display = 'none'
+  }
+})
+
 document.addEventListener('DOMContentLoaded', carregarLancamentos)
