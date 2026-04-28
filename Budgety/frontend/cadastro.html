@@ -166,6 +166,10 @@
   </div>
 
   <script>
+    // Se já estiver logado, redireciona pro dashboard
+    const token = localStorage.getItem('token')
+    if (token) window.location.href = '/'
+
     function verificarForca() {
       const senha = document.getElementById('senha').value
       const barra = document.getElementById('forca-barra')
