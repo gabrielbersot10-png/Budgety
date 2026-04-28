@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Budgety</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -98,10 +97,17 @@
       margin-bottom: 20px;
     }
 
+    .formulario label {
+      display: block;
+      font-size: 13px;
+      color: #7eb8f7;
+      margin-bottom: 4px;
+      margin-top: 12px;
+    }
+
     .formulario input, .formulario select {
       width: 100%;
       padding: 14px 16px;
-      margin: 8px 0;
       border: 1px solid #2a5298;
       border-radius: 8px;
       background: #0f1f3d;
@@ -122,7 +128,7 @@
       cursor: pointer;
       font-size: 15px;
       font-weight: 600;
-      margin-top: 10px;
+      margin-top: 20px;
       transition: background 0.2s;
     }
 
@@ -200,8 +206,7 @@
       <span>💰</span> Budgety
     </div>
     <div style="display:flex;align-items:center;gap:12px">
-      <button class="btn-relatorio" onclick="window.location.href='/relatorio.html'">📊 Relatório Mensal</button>
-      
+      <button class="btn-relatorio" onclick="window.location.href='/relatorio'">📊 Relatório Mensal</button>
       <div style="position:relative">
         <div id="avatar" onclick="toggleMenu()" style="width:38px;height:38px;border-radius:50%;background:#2a5298;border:2px solid #7eb8f7;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700;font-size:15px;color:#fff"></div>
         <div id="menu-usuario" style="display:none;position:absolute;right:0;top:48px;background:#1a3a6b;border:1px solid #2a5298;border-radius:12px;padding:8px;min-width:200px;z-index:200">
@@ -232,12 +237,16 @@
 
   <div class="formulario">
     <h3>Adicionar lançamento</h3>
-    <input type="text" id="descricao" placeholder="Descrição (ex: Aluguel)">
-    <input type="number" id="valor" placeholder="Valor (ex: 500)">
+    <label for="descricao">Descrição</label>
+    <input type="text" id="descricao" placeholder="Ex: Aluguel, Salário...">
+    <label for="valor">Valor</label>
+    <input type="number" id="valor" placeholder="Ex: 500.00" step="0.01" min="0">
+    <label for="tipo">Tipo</label>
     <select id="tipo">
       <option value="receita">Receita</option>
       <option value="despesa">Despesa</option>
     </select>
+    <label for="data">Data do lançamento</label>
     <input type="date" id="data">
     <button class="btn-adicionar" onclick="adicionar()">Adicionar</button>
   </div>
@@ -252,6 +261,6 @@
     <div id="lista-lancamentos"></div>
   </div>
 
- <script src="/script.js"></script>
+  <script src="/script.js"></script>
 </body>
 </html>
