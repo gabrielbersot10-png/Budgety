@@ -200,10 +200,7 @@
   </div>
 
   <script>
-    // Verificação de login
-    const token = localStorage.getItem('token')
-    if (!token) window.location.href = '/login.html'
-
+  
     // Avatar
     const emailUsuario = localStorage.getItem('email') || ''
     const avatarEl = document.getElementById('avatar')
