@@ -158,8 +158,10 @@ function filtrar() {
             <span style="font-size:12px;color:${l.tipo === 'receita' ? '#2ecc71' : '#e74c3c'};background:${l.tipo === 'receita' ? 'rgba(46,204,113,0.1)' : 'rgba(231,76,60,0.1)'};padding:3px 10px;border-radius:20px">${l.tipo === 'receita' ? '↑ Receita' : '↓ Despesa'}</span>
             <span style="font-size:12px;color:#5a7fa8">${dataFormatada}</span>
           </div>
-          <button onclick="editarRelatorio('${l.id}')" style="background:#2a5298;color:white;border:none;border-radius:6px;padding:6px 16px;cursor:pointer;font-size:13px">Editar</button>
-        </div>
+          <div style="display:flex;gap:8px">
+  <button onclick="editarRelatorio('${l.id}')" style="background:#2a5298;color:white;border:none;border-radius:6px;padding:6px 16px;cursor:pointer;font-size:13px">Editar</button>
+  <button onclick="deletarRelatorio('${l.id}')" style="background:#e74c3c;color:white;border:none;border-radius:6px;padding:6px 16px;cursor:pointer;font-size:13px">Deletar</button>
+
       </div>
     `
   })
@@ -201,4 +203,13 @@ function toggleLista() {
   btn.textContent = aberto ? '▼ Ver lançamentos' : '▲ Ocultar lançamentos'
 }
 
+async function deletarRelatorio(id) {
+  if (confirm('Deseja excluir este lançamento?')) {
+    await fetch(`/api/lancamentos/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    await carregarLancamentos()
+  }
+}
 carregarLancamentos()
