@@ -10,6 +10,7 @@ const crypto = require('crypto');
 const cors = require('cors');
 const helmet = require('helmet');
 const { body, param, validationResult } = require('express-validator');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 
@@ -21,8 +22,14 @@ const db = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
+// ==========================================
+// SECURITY HEADERS
+// ==========================================
 app.use(helmet({ contentSecurityPolicy: false }));
 
+// ==========================================
+// CORS
+// ==========================================
 app.use(cors({
     origin: [
         'https://budgety-5bbs.onrender.com',
@@ -32,13 +39,49 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// ==========================================
+// RATE LIMITING — LIMITE DE REQUISIÇÕES
+// Protege contra ataques DDoS e força bruta
+// ==========================================
+
+// Limite geral — todas as rotas
+const limiteGeral = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 100, // máximo 100 requisições por IP
+    message: { erro: 'Muitas requisições. Tente novamente em 15 minutos.' },
+    standardHeaders: true,
+    legacyHeaders: false
+})
+
+// Limite específico pro login — mais restrito
+const limiteLogin = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 10, // máximo 10 tentativas de login por IP
+    message: { erro: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
+    standardHeaders: true,
+    legacyHeaders: false
+})
+
+// Limite pro cadastro
+const limiteCadastro = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hora
+    max: 5, // máximo 5 cadastros por IP por hora
+    message: { erro: 'Muitos cadastros. Tente novamente em 1 hora.' },
+    standardHeaders: true,
+    legacyHeaders: false
+})
+
+// Aplica limite geral em todas as rotas
+app.use(limiteGeral)
+
+// ==========================================
+// MIDDLEWARES GERAIS
+// ==========================================
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
 // ==========================================
 // FUNÇÃO DE VERIFICAÇÃO DE ERROS
-// Usada em todas as rotas pra checar
-// se a validação passou ou não
 // ==========================================
 function verificarErros(req, res, next) {
     const erros = validationResult(req);
@@ -48,6 +91,9 @@ function verificarErros(req, res, next) {
     next();
 }
 
+// ==========================================
+// INICIALIZAÇÃO DO BANCO DE DADOS
+// ==========================================
 const initDB = async () => {
     try {
         await db.query(`
@@ -87,6 +133,9 @@ const initDB = async () => {
 
 initDB();
 
+// ==========================================
+// MIDDLEWARE DE AUTENTICAÇÃO
+// ==========================================
 function autenticar(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader ? authHeader.split(' ')[1] : null;
@@ -103,11 +152,10 @@ function autenticar(req, res, next) {
 }
 
 // ==========================================
-// ROTA DE CADASTRO COM VALIDAÇÕES ROBUSTAS
-// Agora a validação acontece no servidor —
-// não adianta manipular o frontend!
+// ROTA DE CADASTRO
 // ==========================================
 app.post('/api/cadastro',
+    limiteCadastro,
     [
         body('email')
             .trim()
@@ -140,9 +188,10 @@ app.post('/api/cadastro',
 );
 
 // ==========================================
-// ROTA DE LOGIN COM VALIDAÇÕES
+// ROTA DE LOGIN
 // ==========================================
 app.post('/api/login',
+    limiteLogin,
     [
         body('email')
             .trim()
@@ -195,11 +244,7 @@ app.post('/api/login',
 );
 
 // ==========================================
-// ROTAS DE LANÇAMENTOS COM VALIDAÇÕES
-// Valor tem que ser número positivo,
-// tipo só pode ser receita ou despesa,
-// data tem que ser uma data válida,
-// descrição não pode ser vazia nem muito longa
+// ROTAS DE LANÇAMENTOS
 // ==========================================
 app.get('/api/lancamentos', autenticar, async (req, res) => {
     try {
