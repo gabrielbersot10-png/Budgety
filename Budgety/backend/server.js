@@ -11,6 +11,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const { body, param, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
+const sanitizeHtml = require('sanitize-html');
 
 const app = express();
 
@@ -40,38 +41,32 @@ app.use(cors({
 }));
 
 // ==========================================
-// RATE LIMITING — LIMITE DE REQUISIÇÕES
-// Protege contra ataques DDoS e força bruta
+// RATE LIMITING
 // ==========================================
-
-// Limite geral — todas as rotas
 const limiteGeral = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 100, // máximo 100 requisições por IP
+    windowMs: 15 * 60 * 1000,
+    max: 100,
     message: { erro: 'Muitas requisições. Tente novamente em 15 minutos.' },
     standardHeaders: true,
     legacyHeaders: false
 })
 
-// Limite específico pro login — mais restrito
 const limiteLogin = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 10, // máximo 10 tentativas de login por IP
+    windowMs: 15 * 60 * 1000,
+    max: 10,
     message: { erro: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
     standardHeaders: true,
     legacyHeaders: false
 })
 
-// Limite pro cadastro
 const limiteCadastro = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hora
-    max: 5, // máximo 5 cadastros por IP por hora
+    windowMs: 60 * 60 * 1000,
+    max: 5,
     message: { erro: 'Muitos cadastros. Tente novamente em 1 hora.' },
     standardHeaders: true,
     legacyHeaders: false
 })
 
-// Aplica limite geral em todas as rotas
 app.use(limiteGeral)
 
 // ==========================================
@@ -89,6 +84,21 @@ function verificarErros(req, res, next) {
         return res.status(400).json({ erro: erros.array()[0].msg });
     }
     next();
+}
+
+// ==========================================
+// FUNÇÃO DE SANITIZAÇÃO
+// Remove qualquer HTML ou script malicioso
+// dos dados enviados pelo usuário.
+// Protege contra ataques XSS — Cross Site Scripting
+// Exemplo: <script>alert('hack')</script> vira ""
+// ==========================================
+function sanitizar(texto) {
+    if (!texto) return texto;
+    return sanitizeHtml(String(texto), {
+        allowedTags: [],        // Não permite nenhuma tag HTML
+        allowedAttributes: {}   // Não permite nenhum atributo
+    }).trim();
 }
 
 // ==========================================
@@ -277,7 +287,9 @@ app.post('/api/lancamentos',
     ],
     verificarErros,
     async (req, res) => {
-        const { descricao, valor, tipo, data } = req.body;
+        // Sanitiza a descrição antes de salvar no banco
+        const descricao = sanitizar(req.body.descricao);
+        const { valor, tipo, data } = req.body;
 
         try {
             const id = crypto.randomBytes(16).toString('hex');
@@ -310,7 +322,9 @@ app.put('/api/lancamentos/:id',
     ],
     verificarErros,
     async (req, res) => {
-        const { descricao, valor, tipo } = req.body;
+        // Sanitiza a descrição antes de atualizar no banco
+        const descricao = sanitizar(req.body.descricao);
+        const { valor, tipo } = req.body;
         try {
             await db.query(
                 'UPDATE lancamentos SET descricao = $1, valor = $2, tipo = $3 WHERE id = $4 AND usuario_id = $5',
