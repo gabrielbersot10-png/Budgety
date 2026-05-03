@@ -104,7 +104,7 @@ async function editar(id) {
 
 // ==========================================
 // OCR — LEITURA DE COMPROVANTE
-// Tesseract roda no navegador via CDN
+// Tesseract roda no navegador
 // A imagem nunca sai do computador do usuário
 // ==========================================
 async function processarComprovante() {
@@ -118,12 +118,11 @@ async function processarComprovante() {
   status.style.color = '#7eb8f7'
 
   try {
-    // Carrega o Tesseract via CDN
-    const { createWorker } = await import('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.esm.min.js')
-
-    const worker = await createWorker('por')
+    const worker = await Tesseract.createWorker('por')
     const { data: { text } } = await worker.recognize(file)
     await worker.terminate()
+
+    console.log('Texto extraído:', text)
 
     // Tenta extrair o valor — ex: R$ 150,00
     const valorMatch = text.match(/R\$\s*(\d+[\.,]\d{2})/i)
