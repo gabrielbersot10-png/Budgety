@@ -149,6 +149,31 @@
 
     .btn-relatorio:hover { background: #3a6bc8; }
 
+    .btn-upload {
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      color: #7eb8f7;
+      border: 1px dashed #2a5298;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 8px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .btn-upload:hover {
+      background: rgba(42, 82, 152, 0.2);
+      border-color: #7eb8f7;
+    }
+
+    .ocr-status {
+      font-size: 12px;
+      color: #5a7fa8;
+      margin-top: 8px;
+      min-height: 18px;
+    }
+
     /* Gaveta */
     .overlay {
       display: none;
@@ -237,6 +262,15 @@
 
   <div class="formulario">
     <h3>Adicionar lançamento</h3>
+
+    <!-- Upload de comprovante -->
+    <label>Importar comprovante (opcional)</label>
+    <input type="file" id="comprovante" accept="image/jpeg,image/png" style="display:none" onchange="processarComprovante()">
+    <button type="button" class="btn-upload" onclick="document.getElementById('comprovante').click()">
+      📎 Fazer upload de comprovante
+    </button>
+    <div class="ocr-status" id="ocr-status"></div>
+
     <label for="descricao">Descrição</label>
     <input type="text" id="descricao" placeholder="Ex: Aluguel, Salário...">
     <label for="valor">Valor</label>
