@@ -12,6 +12,8 @@ const helmet = require('helmet');
 const { body, param, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const sanitizeHtml = require('sanitize-html');
+const multer = require('multer');
+const Tesseract = require('tesseract.js');
 
 const app = express();
 
@@ -88,16 +90,13 @@ function verificarErros(req, res, next) {
 
 // ==========================================
 // FUNÇÃO DE SANITIZAÇÃO
-// Remove qualquer HTML ou script malicioso
-// dos dados enviados pelo usuário.
-// Protege contra ataques XSS — Cross Site Scripting
-// Exemplo: <script>alert('hack')</script> vira ""
+// Remove HTML e scripts maliciosos
 // ==========================================
 function sanitizar(texto) {
     if (!texto) return texto;
     return sanitizeHtml(String(texto), {
-        allowedTags: [],        // Não permite nenhuma tag HTML
-        allowedAttributes: {}   // Não permite nenhum atributo
+        allowedTags: [],
+        allowedAttributes: {}
     }).trim();
 }
 
@@ -287,7 +286,6 @@ app.post('/api/lancamentos',
     ],
     verificarErros,
     async (req, res) => {
-        // Sanitiza a descrição antes de salvar no banco
         const descricao = sanitizar(req.body.descricao);
         const { valor, tipo, data } = req.body;
 
@@ -322,7 +320,6 @@ app.put('/api/lancamentos/:id',
     ],
     verificarErros,
     async (req, res) => {
-        // Sanitiza a descrição antes de atualizar no banco
         const descricao = sanitizar(req.body.descricao);
         const { valor, tipo } = req.body;
         try {
@@ -356,6 +353,45 @@ app.delete('/api/lancamentos/:id',
         }
     }
 );
+
+// ==========================================
+// UPLOAD E OCR DE COMPROVANTES
+// Tesseract lê a imagem e extrai os dados
+// ==========================================
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }, // máximo 5MB
+    fileFilter: (req, file, cb) => {
+        const permitidos = ['image/jpeg', 'image/png', 'image/jpg']
+        if (permitidos.includes(file.mimetype)) {
+            cb(null, true)
+        } else {
+            cb(new Error('Apenas imagens JPG e PNG são permitidas'))
+        }
+    }
+})
+
+app.post('/api/ocr', autenticar, upload.single('comprovante'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ erro: 'Nenhum arquivo enviado' })
+
+        // Tesseract lê o texto da imagem em português
+        const { data: { text } } = await Tesseract.recognize(req.file.buffer, 'por')
+
+        // Tenta extrair o valor — ex: R$ 150,00
+        const valorMatch = text.match(/R\$\s*(\d+[\.,]\d{2})/i)
+        const valor = valorMatch ? valorMatch[1].replace(',', '.') : null
+
+        // Tenta extrair a data — ex: 29/04/2026
+        const dataMatch = text.match(/(\d{2})\/(\d{2})\/(\d{4})/)
+        const data = dataMatch ? `${dataMatch[3]}-${dataMatch[2]}-${dataMatch[1]}` : null
+
+        res.json({ texto: text, valor, data })
+    } catch (err) {
+        console.error('Erro no OCR:', err)
+        res.status(500).json({ erro: 'Erro ao processar imagem' })
+    }
+})
 
 // ==========================================
 // SERVIR PÁGINAS HTML
