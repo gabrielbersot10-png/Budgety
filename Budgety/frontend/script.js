@@ -67,6 +67,9 @@ async function adicionar() {
   valorEl.value = ''
   dataEl.value = ''
 
+  const status = document.getElementById('ocr-status')
+  if (status) status.textContent = ''
+
   await carregarLancamentos()
 }
 
@@ -99,6 +102,57 @@ async function editar(id) {
   await carregarLancamentos()
 }
 
+// ==========================================
+// OCR — LEITURA DE COMPROVANTE
+// Tesseract roda no navegador via CDN
+// A imagem nunca sai do computador do usuário
+// ==========================================
+async function processarComprovante() {
+  const fileInput = document.getElementById('comprovante')
+  const file = fileInput.files[0]
+  const status = document.getElementById('ocr-status')
+
+  if (!file) return
+
+  status.textContent = '⏳ Lendo comprovante...'
+  status.style.color = '#7eb8f7'
+
+  try {
+    // Carrega o Tesseract via CDN
+    const { createWorker } = await import('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.esm.min.js')
+
+    const worker = await createWorker('por')
+    const { data: { text } } = await worker.recognize(file)
+    await worker.terminate()
+
+    // Tenta extrair o valor — ex: R$ 150,00
+    const valorMatch = text.match(/R\$\s*(\d+[\.,]\d{2})/i)
+    const valor = valorMatch ? valorMatch[1].replace(',', '.') : null
+
+    // Tenta extrair a data — ex: 29/04/2026
+    const dataMatch = text.match(/(\d{2})\/(\d{2})\/(\d{4})/)
+    const data = dataMatch ? `${dataMatch[3]}-${dataMatch[2]}-${dataMatch[1]}` : null
+
+    if (valor) document.getElementById('valor').value = valor
+    if (data) document.getElementById('data').value = data
+
+    if (valor || data) {
+      status.textContent = '✅ Dados extraídos! Confira e complete os campos.'
+      status.style.color = '#2ecc71'
+    } else {
+      status.textContent = '⚠️ Não foi possível extrair os dados. Preencha manualmente.'
+      status.style.color = '#f1c40f'
+    }
+
+  } catch (err) {
+    console.error('Erro OCR:', err)
+    status.textContent = '❌ Erro ao processar imagem.'
+    status.style.color = '#e74c3c'
+  }
+
+  fileInput.value = ''
+}
+
 function atualizarDashboard() {
   const lista = document.getElementById('lista-lancamentos')
   if (!lista) return
@@ -107,13 +161,11 @@ function atualizarDashboard() {
   const mesAtual = agora.getMonth()
   const anoAtual = agora.getFullYear()
 
-  // Filtra lançamentos do mês atual
   const lancamentosMesAtual = lancamentos.filter(l => {
     const d = new Date(l.data + 'T00:00:00')
     return d.getMonth() === mesAtual && d.getFullYear() === anoAtual
   })
 
-  // Cards mostram só o mês atual
   const totalReceitas = lancamentosMesAtual
     .filter(l => l.tipo === 'receita')
     .reduce((acc, l) => acc + Number(l.valor), 0)
@@ -131,7 +183,6 @@ function atualizarDashboard() {
   totalLucro.textContent = `R$ ${lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
   totalLucro.className = lucro >= 0 ? 'verde' : 'vermelho'
 
-  // Lista da gaveta — só mês atual
   lista.innerHTML = ''
 
   if (lancamentosMesAtual.length === 0) {
@@ -185,7 +236,6 @@ function sair() {
   window.location.href = '/login.html'
 }
 
-// Fecha menu ao clicar fora
 document.addEventListener('click', e => {
   const menu = document.getElementById('menu-usuario')
   const avatar = document.getElementById('avatar')
